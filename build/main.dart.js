@@ -257,16 +257,18 @@
   H = {JS_CONST: function JS_CONST() {
     }, LateError: function LateError(t0) {
       this._message = t0;
-    }, EfficientLengthIterable: function EfficientLengthIterable() {
-    }, ListIterable: function ListIterable() {
-    }, ListIterator: function ListIterator(t0, t1) {
-      var _ = this;
-      _.__internal$_iterable = t0;
-      _.__internal$_length = t1;
-      _.__internal$_index = 0;
-      _.__internal$_current = null;
-    }, MappedListIterable: function MappedListIterable(t0, t1) {
-      this._source = t0;
+    }, MappedIterable: function MappedIterable(t0, t1) {
+      this.__internal$_iterable = t0;
+      this._f = t1;
+    }, MappedIterator: function MappedIterator(t0, t1) {
+      this.__internal$_current = null;
+      this._iterator = t0;
+      this._f = t1;
+    }, WhereIterable: function WhereIterable(t0, t1) {
+      this.__internal$_iterable = t0;
+      this._f = t1;
+    }, WhereIterator: function WhereIterator(t0, t1) {
+      this._iterator = t0;
       this._f = t1;
     },
     unminifyOrTag: function(rawClassName) {
@@ -2292,9 +2294,6 @@
       }
       return C.UnknownJavaScriptObject_methods;
     },
-    JSArray_JSArray$allocateGrowable: function($length) {
-      return new Array($length);
-    },
     JSArray_markFixedList: function(list) {
       list.fixed$length = Array;
       return list;
@@ -2499,6 +2498,8 @@
     },
     Iterable: function Iterable() {
     },
+    Iterator: function Iterator() {
+    },
     Null: function Null() {
     },
     Object: function Object() {
@@ -2555,15 +2556,14 @@
     },
     _iterablePartsToStrings: function(iterable, parts) {
       var next, ultimateString, penultimateString, penultimate, ultimate, ultimate0, elision,
-        it = new H.ListIterator(iterable, iterable._source.length),
-        t1 = H._instanceType(it)._precomputed1,
+        it = iterable.get$iterator(iterable),
         $length = 0, count = 0;
       while (true) {
         if (!($length < 80 || count < 3))
           break;
         if (!it.moveNext$0())
           return;
-        next = H.S(t1._as(it.__internal$_current));
+        next = H.S(it.get$current());
         parts.push(next);
         $length += next.length + 2;
         ++count;
@@ -2578,7 +2578,7 @@
           return H.ioore(parts, -1);
         penultimateString = parts.pop();
       } else {
-        penultimate = t1._as(it.__internal$_current);
+        penultimate = it.get$current();
         ++count;
         if (!it.moveNext$0()) {
           if (count <= 4) {
@@ -2591,10 +2591,10 @@
           penultimateString = parts.pop();
           $length += ultimateString.length + 2;
         } else {
-          ultimate = t1._as(it.__internal$_current);
+          ultimate = it.get$current();
           ++count;
           for (; it.moveNext$0(); penultimate = ultimate, ultimate = ultimate0) {
-            ultimate0 = t1._as(it.__internal$_current);
+            ultimate0 = it.get$current();
             ++count;
             if (count > 100) {
               while (true) {
@@ -2654,40 +2654,40 @@
       F.printTimes();
     },
     printTimes: function() {
-      var stopwatch2, numbers1, numbers2,
+      var stopwatch2, numbers, i, numbers1, numbers2,
         stopwatch1 = new P.Stopwatch();
       $.$get$Stopwatch__frequency();
       stopwatch2 = new P.Stopwatch();
+      numbers = new Array(10000000);
+      for (i = 0; i < 10000000; ++i)
+        numbers[i] = i;
       stopwatch1.start$0(0);
-      numbers1 = F.getNumbers1(10000000);
+      numbers1 = F.getNumbers1(numbers);
       if (stopwatch1._stop == null)
         stopwatch1._stop = $.Primitives_timerTicks.call$0();
       stopwatch2.start$0(0);
-      numbers2 = F.getNumbers2(10000000);
+      numbers2 = F.getNumbers2(numbers);
       if (stopwatch2._stop == null)
         stopwatch2._stop = $.Primitives_timerTicks.call$0();
       C.JSArray_methods.addAll$1(P.List_List$of(numbers1, true), numbers2);
       P.print("Map iteration time = " + stopwatch1.get$elapsedMilliseconds());
       P.print("For loop iteration time = " + stopwatch2.get$elapsedMilliseconds());
     },
-    getNumbers1: function(size) {
-      var i,
-        numbers = J.JSArray_JSArray$allocateGrowable(size);
-      for (i = 0; i < size; ++i)
-        numbers[i] = i;
-      return P.List_List$of(new H.MappedListIterable(numbers, new F.getNumbers1_closure()), true);
+    getNumbers1: function(numbers) {
+      return P.List_List$of(new H.MappedIterable(new H.WhereIterable(numbers, new F.getNumbers1_closure()), new F.getNumbers1_closure0()), true);
     },
-    getNumbers2: function(size) {
-      var i, mapped, t1, _i,
-        numbers2 = J.JSArray_JSArray$allocateGrowable(size);
-      for (i = 0; i < size; ++i)
-        numbers2[i] = i;
-      mapped = [];
-      for (t1 = numbers2.length, _i = 0; _i < t1; ++_i)
-        mapped.push(numbers2[_i] * 10);
+    getNumbers2: function(numbers) {
+      var t1, _i, i, mapped = [];
+      for (t1 = numbers.length, _i = 0; _i < numbers.length; numbers.length === t1 || (0, H.throwConcurrentModificationError)(numbers), ++_i) {
+        i = numbers[_i];
+        if (C.JSInt_methods.$mod(i, 10) === 0)
+          mapped.push(i * 10);
+      }
       return mapped;
     },
     getNumbers1_closure: function getNumbers1_closure() {
+    },
+    getNumbers1_closure0: function getNumbers1_closure0() {
     }
   };
   var holders = [C, H, J, P, W, F];
@@ -2793,6 +2793,17 @@
       else
         return "" + receiver;
     },
+    $mod: function(receiver, other) {
+      var result = receiver % other;
+      if (result === 0)
+        return 0;
+      if (result > 0)
+        return result;
+      if (other < 0)
+        return result - other;
+      else
+        return result + other;
+    },
     _tdivFast$1: function(receiver, other) {
       return (receiver | 0) === receiver ? receiver / other | 0 : this._tdivSlow$1(receiver, other);
     },
@@ -2828,36 +2839,48 @@
       return t1;
     }
   };
-  H.EfficientLengthIterable.prototype = {};
-  H.ListIterable.prototype = {
+  H.MappedIterable.prototype = {
     get$iterator: function(_) {
-      return new H.ListIterator(this, this._source.length);
-    }
-  };
-  H.ListIterator.prototype = {
-    get$current: function() {
-      return H._instanceType(this)._precomputed1._as(this.__internal$_current);
+      var t1 = this.__internal$_iterable;
+      return new H.MappedIterator(t1.get$iterator(t1), this._f);
     },
-    moveNext$0: function() {
-      var t3, _this = this,
-        t1 = _this.__internal$_iterable,
-        t2 = t1._source,
-        $length = t2.length;
-      if (_this.__internal$_length !== $length)
-        throw H.wrapException(P.ConcurrentModificationError$(t1));
-      t3 = _this.__internal$_index;
-      if (t3 >= $length) {
-        _this.__internal$_current = null;
-        return false;
-      }
-      _this.__internal$_current = t1._f.call$1(t2[t3]);
-      ++_this.__internal$_index;
-      return true;
+    get$length: function(_) {
+      var t1 = this.__internal$_iterable;
+      return t1.get$length(t1);
     }
   };
-  H.MappedListIterable.prototype = {
-    get$length: function(_) {
-      return this._source.length;
+  H.MappedIterator.prototype = {
+    moveNext$0: function() {
+      var _this = this,
+        t1 = _this._iterator;
+      if (t1.moveNext$0()) {
+        _this.__internal$_current = _this._f.call$1(t1.get$current());
+        return true;
+      }
+      _this.__internal$_current = null;
+      return false;
+    },
+    get$current: function() {
+      return H._instanceType(this)._rest[1]._as(this.__internal$_current);
+    }
+  };
+  H.WhereIterable.prototype = {
+    get$iterator: function(_) {
+      var t1 = this.__internal$_iterable;
+      return new H.WhereIterator(new J.ArrayIterator(t1, t1.length), this._f);
+    }
+  };
+  H.WhereIterator.prototype = {
+    moveNext$0: function() {
+      var t1, t2, t3;
+      for (t1 = this._iterator, t2 = H._instanceType(t1)._precomputed1, t3 = this._f; t1.moveNext$0();)
+        if (t3.call$1(t2._as(t1._current)))
+          return true;
+      return false;
+    },
+    get$current: function() {
+      var t1 = this._iterator;
+      return H._instanceType(t1)._precomputed1._as(t1._current);
     }
   };
   H.Primitives_initTicker_closure.prototype = {
@@ -3023,7 +3046,7 @@
   P.Iterable.prototype = {
     get$length: function(_) {
       var count,
-        it = new H.ListIterator(this, this._source.length);
+        it = this.get$iterator(this);
       for (count = 0; it.moveNext$0();)
         ++count;
       return count;
@@ -3032,6 +3055,7 @@
       return P.IterableBase_iterableToShortString(this, "(", ")");
     }
   };
+  P.Iterator.prototype = {};
   P.Null.prototype = {
     toString$0: function(_) {
       return "null";
@@ -3122,6 +3146,11 @@
   };
   F.getNumbers1_closure.prototype = {
     call$1: function(i) {
+      return C.JSInt_methods.$mod(i, 10) === 0;
+    }
+  };
+  F.getNumbers1_closure0.prototype = {
+    call$1: function(i) {
       return i * 10;
     }
   };
@@ -3139,16 +3168,15 @@
     var _inherit = hunkHelpers.inherit,
       _inheritMany = hunkHelpers.inheritMany;
     _inherit(P.Object, null);
-    _inheritMany(P.Object, [H.JS_CONST, J.Interceptor, J.ArrayIterator, P.Error, P.Iterable, H.ListIterator, H.Closure, H.Rti, H._FunctionParameters, P.Null, P.Stopwatch, P.StringBuffer]);
+    _inheritMany(P.Object, [H.JS_CONST, J.Interceptor, J.ArrayIterator, P.Error, P.Iterable, P.Iterator, H.Closure, H.Rti, H._FunctionParameters, P.Null, P.Stopwatch, P.StringBuffer]);
     _inheritMany(J.Interceptor, [J.JSBool, J.JSNull, J.JavaScriptObject, J.JSArray, J.JSNumber, J.JSString, W.EventTarget, W.DomException]);
     _inheritMany(J.JavaScriptObject, [J.PlainJavaScriptObject, J.UnknownJavaScriptObject, J.JavaScriptFunction]);
     _inherit(J.JSUnmodifiableArray, J.JSArray);
     _inheritMany(J.JSNumber, [J.JSInt, J.JSNumNotInt]);
     _inheritMany(P.Error, [H.LateError, H.RuntimeError, H._Error, P.AssertionError, P.NullThrownError, P.ArgumentError, P.UnsupportedError, P.UnimplementedError, P.ConcurrentModificationError, P.CyclicInitializationError]);
-    _inherit(H.EfficientLengthIterable, P.Iterable);
-    _inherit(H.ListIterable, H.EfficientLengthIterable);
-    _inherit(H.MappedListIterable, H.ListIterable);
-    _inheritMany(H.Closure, [H.Primitives_initTicker_closure, H.TearOffClosure, H.initHooks_closure, H.initHooks_closure0, H.initHooks_closure1, F.getNumbers1_closure]);
+    _inheritMany(P.Iterable, [H.MappedIterable, H.WhereIterable]);
+    _inheritMany(P.Iterator, [H.MappedIterator, H.WhereIterator]);
+    _inheritMany(H.Closure, [H.Primitives_initTicker_closure, H.TearOffClosure, H.initHooks_closure, H.initHooks_closure0, H.initHooks_closure1, F.getNumbers1_closure, F.getNumbers1_closure0]);
     _inheritMany(H.TearOffClosure, [H.StaticClosure, H.BoundClosure]);
     _inherit(H._TypeError, H._Error);
     _inheritMany(P.ArgumentError, [P.RangeError, P.IndexError]);
@@ -3169,7 +3197,7 @@
     arrayRti: typeof Symbol == "function" && typeof Symbol() == "symbol" ? Symbol("$ti") : "$ti"
   };
   H._Universe_addRules(init.typeUniverse, JSON.parse('{"PlainJavaScriptObject":"JavaScriptObject","UnknownJavaScriptObject":"JavaScriptObject","JavaScriptFunction":"JavaScriptObject","JSInt":{"int":[]},"JSString":{"String":[]}}'));
-  H._Universe_addErasedTypes(init.typeUniverse, JSON.parse('{"JSArray":1,"JSUnmodifiableArray":1,"ArrayIterator":1,"EfficientLengthIterable":1,"ListIterable":1,"ListIterator":1,"MappedListIterable":2,"Iterable":1}'));
+  H._Universe_addErasedTypes(init.typeUniverse, JSON.parse('{"JSArray":1,"JSUnmodifiableArray":1,"ArrayIterator":1,"MappedIterable":2,"MappedIterator":2,"WhereIterable":1,"WhereIterator":1,"Iterable":1,"Iterator":1}'));
   0;
   var type$ = (function rtii() {
     var findType = H.findType;

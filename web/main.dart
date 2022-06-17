@@ -10,12 +10,13 @@ void printTimes() {
   final stopwatch1 = Stopwatch();
   final stopwatch2 = Stopwatch();
 
+  final numbers = List<int>.generate(size, (i) => i);
   stopwatch1.start();
-  final numbers1 = getNumbers1(size);
+  final numbers1 = getNumbers1(numbers);
   stopwatch1.stop();
 
   stopwatch2.start();
-  final numbers2 = getNumbers2(size);
+  final numbers2 = getNumbers2(numbers);
   stopwatch2.stop();
 
   // Do something with results so that they don't get compiled out.
@@ -28,16 +29,14 @@ void printTimes() {
   print('For loop iteration time = ${stopwatch2.elapsedMilliseconds}');
 }
 
-List<int> getNumbers1(int size) {
-  final numbers = List<int>.generate(size, (i) => i);
-  return numbers.map((i) => i * 10).toList();
+List<int> getNumbers1(List<int> numbers) {
+  return numbers.where((i) => i % 10 == 0).map((i) => i * 10).toList();
 }
 
-List<int> getNumbers2(int size) {
-  final numbers2 = List<int>.generate(size, (i) => i);
+List<int> getNumbers2(List<int> numbers) {
   final mapped = <int>[];
-  for (var i in numbers2) {
-    mapped.add(i * 10);
+  for (final i in numbers) {
+    if (i % 10 == 0) mapped.add(i * 10);
   }
   return mapped;
 }
